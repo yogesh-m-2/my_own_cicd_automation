@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CI/CD Automation</title>
+    <script src="/static/js/main.js" defer></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        textarea { width: 100%; height: 300px; }
+        .status-success { color: green; }
+        .status-fail, .status-error { color: red; }
+        #docker-login-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        #docker-login-modal-content {
+            background: white;
+            padding: 2em;
+            border-radius: 5px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CI/CD Project Builder</h1>
+
+    <h2>Create New Project</h2>
+<form id="create-project-form">
+    <label>Project Name: <input type="text" name="project_name" required></label><br>
+    <label>Repository URL: <input type="text" name="repo_url" id="repo_url" required></label><br>
+    <button type="button" onclick="loadBranches()">Load Branches</button><br>
+
+    <label>Branch:
+        <select name="branch" id="branch" required>
+            <option value="">Select a branch</option>
+        </select>
+    </label><br>
+
+    <label>Build Type:
+        <select name="build_type">
+            <option value="maven">Maven</option>
+            <option value="npm">NPM</option>
+        </select>
+    </label><br>
+
+    <label>Backend POM Path: <input type="text" name="backend_pom_path" required></label><br>
+    <label>Frontend Path: <input type="text" name="frontend_path" required></label><br>
+    <label>Docker Image Name: <input type="text" name="docker_image" required></label><br>
+    <label>Dockerfile Path: <input type="text" name="dockerfile_path" required></label><br>
+    <label>File to Modify Before Build (relative path): <input type="text" name="modify_file_path"></label><br>
+    <label>Content to Insert into File:<br>
+        <textarea name="modify_file_content" rows="4"></textarea>
+    </label><br>
+    <button type="submit">Save Project</button>
+</form>
+
+
+    <hr>
+
+    <h2>Run Build</h2>
+    <form id="build-form">
+        <label>Select Project:
+            <select name="project_name" id="project-select">
+                {% for project in projects %}
+                    <option value="{{ project }}">{{ project }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit">Run Build</button>
+    </form>
+
+    <h3>Status: <span id="status"></span></h3>
+    <textarea id="logs" readonly></textarea>
+
+    <!-- Docker Login Modal -->
+    <div id="docker-login-modal">
+        <div id="docker-login-modal-content">
+            <h3>Docker Login Required</h3>
+            <form id="docker-login-form">
+                <input type="hidden" name="docker_image" id="docker_image">
+                <input type="hidden" name="build_id" id="docker_build_id">
+                <label>Username: <input type="text" name="username" required></label><br>
+                <label>Token: <input type="password" name="token" required></label><br>
+                <button type="submit">Login & Push</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
