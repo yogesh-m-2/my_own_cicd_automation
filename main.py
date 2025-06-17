@@ -64,6 +64,7 @@ def run_build(build_id, data):
             log("Running React Native Android build...")
             gradle_dir = os.path.join(temp_dir, gradle_path)
             log(f"Using Gradle directory: {gradle_dir}")
+            subprocess.run(['chmod', '+x', 'gradlew'], cwd=gradle_dir, capture_output=True, text=True)
             result = subprocess.run(['./gradlew', 'assembleRelease'], cwd=gradle_dir, capture_output=True, text=True)
         else:
             log("Installing NPM dependencies...")
