@@ -99,22 +99,22 @@
 
         <!-- Maven fields -->
         <div id="maven-fields" class="build-type-fields">
-            <label>Backend POM Path: <input type="text" name="backend_pom_path"></label><br>
-            <label>Frontend Path: <input type="text" name="frontend_path"></label><br>
-            <label>Docker Image Name: <input type="text" name="docker_image"></label><br>
-            <label>Dockerfile Path: <input type="text" name="dockerfile_path"></label><br>
+            <label>Backend POM Path: <input type="text" name="backend_pom_path" data-required="maven"></label><br>
+            <label>Frontend Path: <input type="text" name="frontend_path" data-required="maven"></label><br>
+            <label>Docker Image Name: <input type="text" name="docker_image" data-required="maven"></label><br>
+            <label>Dockerfile Path: <input type="text" name="dockerfile_path" data-required="maven"></label><br>
         </div>
 
         <!-- NPM fields -->
         <div id="npm-fields" class="build-type-fields">
-            <label>Frontend Path: <input type="text" name="frontend_path"></label><br>
-            <label>Docker Image Name: <input type="text" name="docker_image"></label><br>
-            <label>Dockerfile Path: <input type="text" name="dockerfile_path"></label><br>
+            <label>Frontend Path: <input type="text" name="frontend_path" data-required="npm"></label><br>
+            <label>Docker Image Name: <input type="text" name="docker_image" data-required="npm"></label><br>
+            <label>Dockerfile Path: <input type="text" name="dockerfile_path" data-required="npm"></label><br>
         </div>
 
         <!-- React Native fields -->
         <div id="react-native-fields" class="build-type-fields">
-            <label>Gradle Path (relative to repo root): <input type="text" name="gradle_path" required></label><br>
+            <label>Gradle Path (relative to repo root): <input type="text" name="gradle_path" data-required="react_native"></label><br>
         </div>
 
         <h3>File Modifications</h3>
@@ -168,6 +168,11 @@
                 div.classList.remove('active');
             });
             document.getElementById(`${buildType}-fields`).classList.add('active');
+
+            // Update required attributes based on build type
+            document.querySelectorAll('input[data-required]').forEach(input => {
+                input.required = input.dataset.required === buildType;
+            });
         }
 
         function addFileModification(path = '', content = '') {
