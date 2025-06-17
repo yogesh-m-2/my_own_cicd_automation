@@ -36,6 +36,7 @@ def run_build(build_id, data):
         dockerfile_path = config['dockerfile_path']
         modify_file_path = config.get('modify_file_path')
         modify_file_content = config.get('modify_file_content')
+        gradle_path = config['gradle_path']
 
         def log(line):
             nonlocal logs
@@ -59,6 +60,11 @@ def run_build(build_id, data):
         if build_type == 'maven':
             log("Running Maven build...")
             result = subprocess.run(['mvn', '-f', backend_pom_path, 'clean', 'package'], cwd=temp_dir, capture_output=True, text=True)
+        elif build_type == 'react_native':
+            log("Running React Native Android build...")
+            gradle_dir = os.path.join(temp_dir, gradle_path)
+            log(f"Using Gradle directory: {gradle_dir}")
+            result = subprocess.run(['./gradlew', 'assembleRelease'], cwd=gradle_dir, capture_output=True, text=True)
         else:
             log("Installing NPM dependencies...")
             subprocess.run(['npm', 'install'], cwd=os.path.join(temp_dir, frontend_path), capture_output=True, text=True)
@@ -184,7 +190,8 @@ def create_project():
         'frontend_path': data['frontend_path'],
         'dockerfile_path': data['dockerfile_path'],
         'modify_file_path': data.get('modify_file_path', ''),
-        'modify_file_content': data.get('modify_file_content', '')
+        'modify_file_content': data.get('modify_file_content', ''),
+        'gradle_path': data['gradle_path']
     }
 
     save_projects(projects)

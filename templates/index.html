@@ -41,14 +41,25 @@
     </label><br>
 
     <label>Build Type:
-        <select name="build_type">
+        <select name="build_type" id="build_type">
             <option value="maven">Maven</option>
             <option value="npm">NPM</option>
+            <option value="react_native">React Native</option>
         </select>
     </label><br>
 
-    <label>Backend POM Path: <input type="text" name="backend_pom_path" required></label><br>
-    <label>Frontend Path: <input type="text" name="frontend_path" required></label><br>
+    <div id="maven-fields">
+        <label>Backend POM Path: <input type="text" name="backend_pom_path"></label><br>
+    </div>
+
+    <div id="npm-fields">
+        <label>Frontend Path: <input type="text" name="frontend_path"></label><br>
+    </div>
+
+    <div id="react-native-fields" style="display: none;">
+        <label>Gradle Path: <input type="text" name="gradle_path" required></label><br>
+    </div>
+
     <label>Docker Image Name: <input type="text" name="docker_image" required></label><br>
     <label>Dockerfile Path: <input type="text" name="dockerfile_path" required></label><br>
     <label>File to Modify Before Build (relative path): <input type="text" name="modify_file_path"></label><br>
@@ -58,6 +69,19 @@
     <button type="submit">Save Project</button>
 </form>
 
+<script>
+document.getElementById('build_type').addEventListener('change', function() {
+    const buildType = this.value;
+    document.getElementById('maven-fields').style.display = buildType === 'maven' ? 'block' : 'none';
+    document.getElementById('npm-fields').style.display = buildType === 'npm' ? 'block' : 'none';
+    document.getElementById('react-native-fields').style.display = buildType === 'react_native' ? 'block' : 'none';
+    
+    // Update required fields
+    document.querySelector('input[name="backend_pom_path"]').required = buildType === 'maven';
+    document.querySelector('input[name="frontend_path"]').required = buildType === 'npm';
+    document.querySelector('input[name="gradle_path"]').required = buildType === 'react_native';
+});
+</script>
 
     <hr>
 
