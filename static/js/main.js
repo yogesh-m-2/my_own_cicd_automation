@@ -4,12 +4,16 @@ document.getElementById('create-project-form').addEventListener('submit', async 
     const data = {};
     const buildType = formData.get('build_type');
 
-    // Collect all form fields first
-    for (let [key, value] of formData.entries()) {
-        if (!key.startsWith('file_modifications[')) {
-            data[key] = value || ''; // Ensure empty strings instead of null/undefined
+    // First, get all input elements in the form, including hidden ones
+    const form = e.target;
+    const allInputs = form.querySelectorAll('input, select, textarea');
+    
+    // Collect all form fields
+    allInputs.forEach(input => {
+        if (input.name && !input.name.startsWith('file_modifications[')) {
+            data[input.name] = input.value || '';
         }
-    }
+    });
 
     // Handle file modifications
     const modifications = [];
