@@ -142,6 +142,13 @@ async function loadProjectForEditing(projectName) {
         
         // Fill form fields
         const form = document.getElementById('create-project-form');
+        
+        // First set the build type to show the correct fields
+        const buildTypeSelect = form.elements['build_type'];
+        buildTypeSelect.value = project.build_type;
+        showBuildTypeFields();
+        
+        // Then fill in all the values
         for (let [key, value] of Object.entries(project)) {
             if (key === 'file_modifications') {
                 loadFileModifications(value);
@@ -162,4 +169,9 @@ document.getElementById('project-select').addEventListener('change', (e) => {
     if (e.target.value) {
         loadProjectForEditing(e.target.value);
     }
+});
+
+// Add event listener for form reset
+document.getElementById('create-project-form').addEventListener('reset', () => {
+    showBuildTypeFields();
 });
