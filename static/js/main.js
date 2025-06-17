@@ -4,37 +4,31 @@ document.getElementById('create-project-form').addEventListener('submit', async 
     const data = {};
     const buildType = formData.get('build_type');
 
-    // First collect all basic fields
+    // Collect all form fields first
     for (let [key, value] of formData.entries()) {
         if (!key.startsWith('file_modifications[')) {
-            data[key] = value;
+            data[key] = value || ''; // Ensure empty strings instead of null/undefined
         }
     }
 
-    // Then handle file modifications
+    // Handle file modifications
+    const modifications = [];
     for (let [key, value] of formData.entries()) {
         if (key.startsWith('file_modifications[')) {
             const matches = key.match(/file_modifications\[(\d+)\]\[(path|content)\]/);
             if (matches) {
                 const index = matches[1];
                 const field = matches[2];
-                if (!data.file_modifications) {
-                    data.file_modifications = [];
+                if (!modifications[index]) {
+                    modifications[index] = {};
                 }
-                if (!data.file_modifications[index]) {
-                    data.file_modifications[index] = {};
-                }
-                data.file_modifications[index][field] = value;
+                modifications[index][field] = value;
             }
         }
     }
+    data.file_modifications = modifications.filter(mod => mod && mod.path && mod.content);
 
-    // Filter out any empty modifications
-    if (data.file_modifications) {
-        data.file_modifications = data.file_modifications.filter(mod => mod.path && mod.content);
-    }
-
-    // Ensure all required fields for the build type are present
+    // Ensure all required fields for the build type are present with default empty values
     if (buildType === 'maven') {
         data.backend_pom_path = data.backend_pom_path || '';
         data.frontend_path = data.frontend_path || '';
@@ -47,6 +41,8 @@ document.getElementById('create-project-form').addEventListener('submit', async 
     } else if (buildType === 'react_native') {
         data.gradle_path = data.gradle_path || '';
     }
+
+    console.log('Submitting data:', data); // Debug log
 
     try {
         const response = await fetch('/create_project', {
@@ -198,3 +194,4 @@ document.getElementById('project-select').addEventListener('change', (e) => {
 document.getElementById('create-project-form').addEventListener('reset', () => {
     showBuildTypeFields();
 });
+
