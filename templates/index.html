@@ -23,41 +23,106 @@
             border-radius: 5px;
             width: 300px;
         }
+        .file-modification {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .file-modification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .file-modification-content {
+            display: none;
+        }
+        .file-modification-content.active {
+            display: block;
+        }
+        .button-group {
+            margin-top: 10px;
+        }
+        .button-group button {
+            margin-right: 5px;
+        }
+        .build-type-fields {
+            display: none;
+        }
+        .build-type-fields.active {
+            display: block;
+        }
+        .builds-list {
+            margin-top: 20px;
+        }
+        .build-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .build-info {
+            flex-grow: 1;
+        }
+        .build-actions {
+            display: flex;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
     <h1>CI/CD Project Builder</h1>
 
     <h2>Create New Project</h2>
-<form id="create-project-form">
-    <label>Project Name: <input type="text" name="project_name" required></label><br>
-    <label>Repository URL: <input type="text" name="repo_url" id="repo_url" required></label><br>
-    <button type="button" onclick="loadBranches()">Load Branches</button><br>
+    <form id="create-project-form">
+        <label>Project Name: <input type="text" name="project_name" required></label><br>
+        <label>Repository URL: <input type="text" name="repo_url" id="repo_url" required></label><br>
+        <button type="button" onclick="loadBranches()">Load Branches</button><br>
 
-    <label>Branch:
-        <select name="branch" id="branch" required>
-            <option value="">Select a branch</option>
-        </select>
-    </label><br>
+        <label>Branch:
+            <select name="branch" id="branch" required>
+                <option value="">Select a branch</option>
+            </select>
+        </label><br>
 
-    <label>Build Type:
-        <select name="build_type">
-            <option value="maven">Maven</option>
-            <option value="npm">NPM</option>
-        </select>
-    </label><br>
+        <label>Build Type:
+            <select name="build_type" id="build_type" onchange="showBuildTypeFields()">
+                <option value="maven">Maven</option>
+                <option value="npm">NPM</option>
+                <option value="react_native">React Native</option>
+            </select>
+        </label><br>
 
-    <label>Backend POM Path: <input type="text" name="backend_pom_path" required></label><br>
-    <label>Frontend Path: <input type="text" name="frontend_path" required></label><br>
-    <label>Docker Image Name: <input type="text" name="docker_image" required></label><br>
-    <label>Dockerfile Path: <input type="text" name="dockerfile_path" required></label><br>
-    <label>File to Modify Before Build (relative path): <input type="text" name="modify_file_path"></label><br>
-    <label>Content to Insert into File:<br>
-        <textarea name="modify_file_content" rows="4"></textarea>
-    </label><br>
-    <button type="submit">Save Project</button>
-</form>
+        <!-- Maven fields -->
+        <div id="maven-fields" class="build-type-fields">
+            <label>Backend POM Path: <input type="text" name="backend_pom_path"></label><br>
+            <label>Frontend Path: <input type="text" name="frontend_path"></label><br>
+            <label>Docker Image Name: <input type="text" name="docker_image"></label><br>
+            <label>Dockerfile Path: <input type="text" name="dockerfile_path"></label><br>
+        </div>
 
+        <!-- NPM fields -->
+        <div id="npm-fields" class="build-type-fields">
+            <label>Frontend Path: <input type="text" name="frontend_path"></label><br>
+            <label>Docker Image Name: <input type="text" name="docker_image"></label><br>
+            <label>Dockerfile Path: <input type="text" name="dockerfile_path"></label><br>
+        </div>
+
+        <!-- React Native fields -->
+        <div id="react-native-fields" class="build-type-fields">
+            <label>Gradle Path (relative to repo root): <input type="text" name="gradle_path" required></label><br>
+        </div>
+
+        <h3>File Modifications</h3>
+        <div id="file-modifications-container"></div>
+        <button type="button" onclick="addFileModification()">Add File Modification</button><br><br>
+
+        <button type="submit">Save Project</button>
+    </form>
 
     <hr>
 
@@ -76,6 +141,10 @@
     <h3>Status: <span id="status"></span></h3>
     <textarea id="logs" readonly></textarea>
 
+    <h2>Builds</h2>
+    <button onclick="loadBuilds()">Refresh Builds</button>
+    <div id="builds-list" class="builds-list"></div>
+
     <!-- Docker Login Modal -->
     <div id="docker-login-modal">
         <div id="docker-login-modal-content">
@@ -89,5 +158,121 @@
             </form>
         </div>
     </div>
+
+    <script>
+        let fileModificationCounter = 0;
+
+        function showBuildTypeFields() {
+            const buildType = document.getElementById('build_type').value;
+            document.querySelectorAll('.build-type-fields').forEach(div => {
+                div.classList.remove('active');
+            });
+            document.getElementById(`${buildType}-fields`).classList.add('active');
+        }
+
+        function addFileModification(path = '', content = '') {
+            const container = document.getElementById('file-modifications-container');
+            const div = document.createElement('div');
+            div.className = 'file-modification';
+            div.id = `file-modification-${fileModificationCounter}`;
+            
+            div.innerHTML = `
+                <div class="file-modification-header">
+                    <input type="text" name="file_modifications[${fileModificationCounter}][path]" 
+                           placeholder="File path" value="${path}" required>
+                    <div class="button-group">
+                        <button type="button" onclick="toggleFileModification(${fileModificationCounter})">Edit</button>
+                        <button type="button" onclick="removeFileModification(${fileModificationCounter})">Remove</button>
+                    </div>
+                </div>
+                <div class="file-modification-content" id="content-${fileModificationCounter}">
+                    <textarea name="file_modifications[${fileModificationCounter}][content]" 
+                              placeholder="Content to insert" rows="4">${content}</textarea>
+                </div>
+            `;
+            
+            container.appendChild(div);
+            fileModificationCounter++;
+        }
+
+        function toggleFileModification(index) {
+            const content = document.getElementById(`content-${index}`);
+            content.classList.toggle('active');
+        }
+
+        function removeFileModification(index) {
+            const element = document.getElementById(`file-modification-${index}`);
+            element.remove();
+        }
+
+        async function loadBuilds() {
+            try {
+                const response = await fetch('/builds');
+                const builds = await response.json();
+                const buildsList = document.getElementById('builds-list');
+                buildsList.innerHTML = '';
+                
+                builds.forEach(build => {
+                    const div = document.createElement('div');
+                    div.className = 'build-item';
+                    const date = new Date(build.created * 1000).toLocaleString();
+                    const size = (build.size / (1024 * 1024)).toFixed(2);
+                    
+                    div.innerHTML = `
+                        <div class="build-info">
+                            <strong>${build.filename}</strong><br>
+                            Size: ${size} MB<br>
+                            Created: ${date}
+                        </div>
+                        <div class="build-actions">
+                            <button onclick="downloadBuild('${build.filename}')">Download</button>
+                            <button onclick="deleteBuild('${build.filename}')">Delete</button>
+                        </div>
+                    `;
+                    buildsList.appendChild(div);
+                });
+            } catch (error) {
+                alert('Error loading builds: ' + error);
+            }
+        }
+
+        async function downloadBuild(filename) {
+            window.location.href = `/builds/${filename}`;
+        }
+
+        async function deleteBuild(filename) {
+            if (!confirm('Are you sure you want to delete this build?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/builds/${filename}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    loadBuilds();
+                } else {
+                    alert('Error deleting build: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error deleting build: ' + error);
+            }
+        }
+
+        // Load existing file modifications when editing a project
+        function loadFileModifications(modifications) {
+            document.getElementById('file-modifications-container').innerHTML = '';
+            fileModificationCounter = 0;
+            modifications.forEach(mod => {
+                addFileModification(mod.path, mod.content);
+            });
+        }
+
+        // Show initial build type fields
+        showBuildTypeFields();
+        // Load builds on page load
+        loadBuilds();
+    </script>
 </body>
 </html>

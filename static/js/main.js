@@ -1,20 +1,47 @@
-document.getElementById('create-project-form').addEventListener('submit', async function(e) {
+document.getElementById('create-project-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        if (key.startsWith('file_modifications[')) {
+            const matches = key.match(/file_modifications\[(\d+)\]\[(path|content)\]/);
+            if (matches) {
+                const index = matches[1];
+                const field = matches[2];
+                if (!data.file_modifications) {
+                    data.file_modifications = [];
+                }
+                if (!data.file_modifications[index]) {
+                    data.file_modifications[index] = {};
+                }
+                data.file_modifications[index][field] = value;
+            }
+        } else {
+            data[key] = value;
+        }
+    }
+    // Filter out any empty modifications
+    if (data.file_modifications) {
+        data.file_modifications = data.file_modifications.filter(mod => mod.path && mod.content);
+    }
 
-    const response = await fetch('/create_project', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-    });
-
-    const result = await response.json();
-    if (result.status === 'success') {
-        alert('Project saved successfully!');
-        location.reload();
-    } else {
-        alert('Failed to save project.');
+    try {
+        const response = await fetch('/create_project', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.status === 'success') {
+            alert('Project saved successfully!');
+            window.location.reload();
+        } else {
+            alert('Error saving project: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error saving project: ' + error);
     }
 });
 
@@ -106,3 +133,33 @@ async function loadBranches() {
         alert("Failed to load branches: " + data.message);
     }
 }
+
+// Add function to load project data for editing
+async function loadProjectForEditing(projectName) {
+    try {
+        const response = await fetch(`/project/${projectName}`);
+        const project = await response.json();
+        
+        // Fill form fields
+        const form = document.getElementById('create-project-form');
+        for (let [key, value] of Object.entries(project)) {
+            if (key === 'file_modifications') {
+                loadFileModifications(value);
+            } else {
+                const input = form.elements[key];
+                if (input) {
+                    input.value = value;
+                }
+            }
+        }
+    } catch (error) {
+        alert('Error loading project: ' + error);
+    }
+}
+
+// Add event listener for project selection
+document.getElementById('project-select').addEventListener('change', (e) => {
+    if (e.target.value) {
+        loadProjectForEditing(e.target.value);
+    }
+});
