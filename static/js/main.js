@@ -2,6 +2,16 @@ document.getElementById('create-project-form').addEventListener('submit', async 
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = {};
+    const buildType = formData.get('build_type');
+
+    // First collect all basic fields
+    for (let [key, value] of formData.entries()) {
+        if (!key.startsWith('file_modifications[')) {
+            data[key] = value;
+        }
+    }
+
+    // Then handle file modifications
     for (let [key, value] of formData.entries()) {
         if (key.startsWith('file_modifications[')) {
             const matches = key.match(/file_modifications\[(\d+)\]\[(path|content)\]/);
@@ -16,13 +26,26 @@ document.getElementById('create-project-form').addEventListener('submit', async 
                 }
                 data.file_modifications[index][field] = value;
             }
-        } else {
-            data[key] = value;
         }
     }
+
     // Filter out any empty modifications
     if (data.file_modifications) {
         data.file_modifications = data.file_modifications.filter(mod => mod.path && mod.content);
+    }
+
+    // Ensure all required fields for the build type are present
+    if (buildType === 'maven') {
+        data.backend_pom_path = data.backend_pom_path || '';
+        data.frontend_path = data.frontend_path || '';
+        data.docker_image = data.docker_image || '';
+        data.dockerfile_path = data.dockerfile_path || '';
+    } else if (buildType === 'npm') {
+        data.frontend_path = data.frontend_path || '';
+        data.docker_image = data.docker_image || '';
+        data.dockerfile_path = data.dockerfile_path || '';
+    } else if (buildType === 'react_native') {
+        data.gradle_path = data.gradle_path || '';
     }
 
     try {

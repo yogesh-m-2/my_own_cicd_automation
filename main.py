@@ -219,20 +219,20 @@ def create_project():
     # Add build type specific fields
     if data['build_type'] == 'maven':
         project_data.update({
-            'backend_pom_path': data['backend_pom_path'],
-            'frontend_path': data['frontend_path'],
-            'docker_image': data['docker_image'],
-            'dockerfile_path': data['dockerfile_path']
+            'backend_pom_path': data.get('backend_pom_path', ''),
+            'frontend_path': data.get('frontend_path', ''),
+            'docker_image': data.get('docker_image', ''),
+            'dockerfile_path': data.get('dockerfile_path', '')
         })
     elif data['build_type'] == 'npm':
         project_data.update({
-            'frontend_path': data['frontend_path'],
-            'docker_image': data['docker_image'],
-            'dockerfile_path': data['dockerfile_path']
+            'frontend_path': data.get('frontend_path', ''),
+            'docker_image': data.get('docker_image', ''),
+            'dockerfile_path': data.get('dockerfile_path', '')
         })
     elif data['build_type'] == 'react_native':
         project_data.update({
-            'gradle_path': data['gradle_path']
+            'gradle_path': data.get('gradle_path', '')
         })
 
     projects[project_name] = project_data
